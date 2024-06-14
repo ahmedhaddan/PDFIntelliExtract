@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Image and CSV Processor</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <!-- DataTables Buttons CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- DataTables JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <!-- DataTables Buttons JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
+    <!-- JSZip for Excel export -->
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hidden { display: none; }
+        .message { margin: 20px 0; }
+        .container { max-width: 1024px; margin-top: 50px; }
+        h1 { margin-bottom: 30px; }
+        #processBtn { margin-top: 20px; }
+        #resultsTable_wrapper { margin-top: 20px; }
+        .side-menu {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #4895ef;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+        }
+        .side-menu a {
+            padding: 8px 8px 8px 32px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #e5e5e5;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu .section-title {
+            padding: 8px 8px 0px 10px;
+            font-size: 20px;
+            color: #8d99ae;
+        }
+        .side-menu a:hover {
+            color: #f1f1f1;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+        }
+        #menu-btn {
+            font-size: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            margin-top: 10px;
+        }
+        #dashboardContent, #ipaContent, #contactContent {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<button id="menu-btn" class="btn btn-primary">☰</button>
+<div class="container">
+    <div id="side-menu" class="side-menu">
+        <a href="#" id="ipaLink">PDF IntelliExtract</a>
+        <a href="#" id="documentation">Documentation</a>
+        <a href="#" id="contact">Contact Support</a>
+        <a href="#" id="about">About me</a>
+    </div>
+
+<!--    <div id="dashboardContent">-->
+<!--        <h2>Dashboard</h2>-->
+<!--        <canvas id="uploadsChart"></canvas>-->
+
+<!--    </div>-->
+
+    <div id="ipaContent">
+        <nav>
+            <img src="image/logo.png" alt="logo" class="img-fluid" style="width: 118px">
+        </nav>
+        <h1 class="text-center">PDF IntelliExtract</h1>
+        <form id="pdfForm" action="/upload" method="post" enctype="multipart/form-data" class="form-group">
+            <input type="file" id="pdfInput" name="pdfs" multiple class="form-control-file">
+            <div class="col text-right">
+                <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#apiKeyModal">
+                    <i class="fas fa-key"></i> Enter API Key
+                </button>
+            </div>
+            <button type="submit" id="processBtn" class="btn btn-primary">Process PDFs</button>
+        </form>
+        <div id="processingMessage" class="message hidden alert alert-info text-center">Processing, please wait...</div>
+        <div id="successMessage" class="message hidden alert alert-success text-center">Processing completed successfully!</div>
+        <div id="errorMessage" class="message hidden alert alert-danger text-center"></div>
+        <div id="output">
+            <table id="resultsTable" class="display table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Titre</th>
+                    <th>Auteur</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                    <th>Open PDF</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="contactContent">
+        <h2>Contact Support</h2>
+        <p>For support, please contact us at <a href="mailto:ahmed.haddan.info@gmail.com"> Support Email</a> </p>
+        <img src="image/contactus.jpg" alt="logo" class="img-fluid" style="width: 600px">
+    </div>
+
+    <div id="documentationContent">
+        <img src="image/documention.jpg" alt="logo" class="img-fluid" style="width: 600px">
+        <h1>PDF IntelliExtract User Documentation</h1>
+        <h2>Introduction</h2>
+        <p>Welcome to PDF IntelliExtract, an AI-powered web application designed to extract the author, title, and description from PDF files. This documentation will guide you through the steps to use the application effectively.</p>
+
+        <h2>Steps to Use PDF IntelliExtract</h2>
+        <ol class="steps">
+            <li>
+                <strong>Open the Application:</strong>
+                <p>Navigate to the URL provided for PDF IntelliExtract in your web browser.</p>
+            </li>
+            <li>
+                <strong>Upload PDF Files:</strong>
+                <p>On the main page, you will find a form to upload your PDF files. Click on the "Choose Files" button and select the PDF files you want to process from your computer. You can select multiple files at once.</p>
+            </li>
+            <li>
+                <strong>Enter API Key:</strong>
+                <p>Before processing, you need to enter your API key. Click on the "Enter API Key" button, enter your API key in the popup form, and click "Save". This step is essential for the AI to function correctly.</p>
+            </li>
+            <li>
+                <strong>Process PDFs:</strong>
+                <p>Once you have uploaded your files and entered the API key, click the "Process PDFs" button. The application will start processing the PDFs, extracting the required information.</p>
+            </li>
+            <li>
+                <strong>View Results:</strong>
+                <p>After the processing is complete, the results will be displayed in a table format. You can see the title, author, and description extracted from each PDF.</p>
+            </li>
+            <li>
+                <strong>Download Results:</strong>
+                <p>You can download the results in Excel format by clicking the "Excel" button available on the results table.</p>
+            </li>
+        </ol>
+
+        <div class="note">
+            <strong>Note:</strong> Ensure that your API key is valid and has the necessary permissions for the application to work correctly.
+        </div>
+
+        <h2>Example</h2>
+        <div class="example">
+            <p>Let's walk through an example:</p>
+            <ol>
+                <li>Navigate to the PDF IntelliExtract web app.</li>
+                <li>Click on "Choose Files" and select two PDF files named <em>sample1.pdf</em> and <em>sample2.pdf</em>.</li>
+                <li>Click on "Enter API Key", input your API key, and save it.</li>
+                <li>Click on "Process PDFs".</li>
+                <li>Wait for the processing to complete. You will see a table with the extracted titles, authors, and descriptions from <em>sample1.pdf</em> and <em>sample2.pdf</em>.</li>
+                <li>Click on "Export to Excel" to download the results.</li>
+            </ol>
+        </div>
+        <p>If you encounter any issues or have any questions, please contact our support team at <a href="mailto:ahmed.haddan.info@gmail.com">Support Email</a>.</p>
+
+    </div>
+
+    <div id="aboutContent">
+        <h2>About Me</h2>
+        <p>My name is Ahmed Haddan, and I am a software developer with a passion for building innovative web applications. PDF IntelliExtract is one of my projects aimed at simplifying the extraction of information from PDF files using AI technology.</p>
+        <p>If you have any feedback, suggestions, or questions about PDF IntelliExtract, feel free to reach out to me at : </p>
+        <a href="https://github.com/ahmedhaddan"><img src="image/github.png" alt="logo" class="img-fluid" style="width: 100px"></a>
+        <a href="mailto:ahmed.haddan.info@gmail.com"><img src="image/email.png" alt="logo" class="img-fluid" style="width: 100px"></a>
+    </div>
+
+    <div class="modal fade" id="apiKeyModal" tabindex="-1" role="dialog" aria-labelledby="apiKeyModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="apiKeyModalLabel">Enter API Key</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="apiKeyForm">
+                        <div class="form-group">
+                            <label for="apiKeyInput">API Key</label>
+                            <input type="text" class="form-control" id="apiKeyInput" placeholder="Enter API Key">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="script.js"></script>
+<script>
+    $(document).ready(function() {
+        console.log('api clicked1')
+        const storedApiKey = localStorage.getItem('apiKey');
+        if (storedApiKey) {
+            console.log('api clicked2')
+            $('#apiKeyInput').val(storedApiKey);
+        }
+        $('#apiKeyForm').submit(function(event) {
+            console.log('api clicked3')
+            event.preventDefault();
+            const apiKey = $('#apiKeyInput').val();
+            localStorage.setItem('apiKey', apiKey);
+            $.ajax({
+                url: '/set-api-key',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ apiKey: apiKey }),
+                success: function(response) {
+                    alert('API Key saved successfully');
+                    $('#apiKeyModal').modal('hide');
+                },
+                error: function(error) {
+                    alert('Error saving API Key');
+                }
+            });
+        });
+    });
+
+    function openMenu() {
+        document.getElementById("side-menu").style.width = "250px";
+    }
+
+    function closeMenu() {
+        document.getElementById("side-menu").style.width = "0";
+    }
+
+    document.getElementById("menu-btn").addEventListener("click", openMenu);
+</script>
+</body>
+</html>
