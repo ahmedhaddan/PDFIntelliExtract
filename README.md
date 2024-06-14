@@ -62,7 +62,7 @@ PDF IntelliExtract is a web application designed to extract the author, title, a
 Edit the `config.js` file to set up your storage configurations.
 
 ## Project Structure
-
+```bash
 .
 ├── app.js                # Main application file
 ├── config.js             # Configuration file for multer and API key
@@ -75,7 +75,7 @@ Edit the `config.js` file to set up your storage configurations.
 ├── index.html            # Main HTML file
 ├── package.json          # Project metadata and dependencies
 └── README.md             # Project documentation
-
+```
 
 
 ## Dependencies
